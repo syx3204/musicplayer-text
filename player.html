@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐播放器</title>
+    <!-- 引入Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
+    <style>
+        .album-art {
+            border-radius: 10px; /* 圆角 */
+            width: 100%; /* 图片宽度 */
+            max-width: 300px; /* 最大宽度 */
+            margin: 0 auto 20px; /* 居中对齐并留出底部间距 */
+            display: block; /* 确保图片块级显示 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="jumbotron mt-5 text-center">
+            <img src="mp3/夜に駆ける-YOASOBI.jpg" alt="专辑封面" class="album-art">
+            <h1 class="display-4">夜に駆ける</h1>
+            <p class="lead">YOASOBI</p>
+            <span class="lead" id="lrc"></span>
+            <br />
+            <audio id="audio" src="mp3/夜に駆ける-YOASOBI.flac" controls style="width:100%; margin-top: 20px;"></audio>
+        </div>
+    </div>
+
+    <!-- 引入jQuery -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        // 解析LRC文件
+        function parseLRC(lrcText) {
+            const lines = lrcText.split('\n');
+            const lrcData = [];
+
+            lines.forEach(line => {
+                const match = line.match(/\[(\d{2}:\d{2}\.\d{2})\](.*)/);
+                if (match) {
+                    const time = match[1];
+                    const lrc = match[2].trim();
+                    const [minutes, seconds] = time.split(':').map(Number);
+                    const totalTime = minutes * 60 + seconds;
+                    lrcData.push({ time: totalTime, lrc });
+                }
+            });
+
+            console.log('Parsed LRC data:', lrcData); // 调试信息
+            return lrcData;
+        }
+
+        // 获取歌词显示元素
+        var lrc = document.getElementById('lrc');
+
+        // 获取音频元素
+        var audio = document.getElementById('audio');
+
+        // 读取LRC文件
+        const lrcFilePath ="mp3/夜に駆ける-YOASOBI.lrc"; // 这里填写您的LRC文件路径
+        fetch(lrcFilePath)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok: ${response.statusText}`);
+                }
+                return response.text();
+            })
+            .then(lrcText => {
+                const lrcData = parseLRC(lrcText);
+
+                // 监听音频播放时间更新事件
+                audio.ontimeupdate = function(e) {
+                    for (let i = 0; i < lrcData.length; i++) {
+                        if (audio.currentTime >= lrcData[i].time) {
+                            // 显示当前歌词
+                            lrc.innerHTML = lrcData[i].lrc;
+                        }
+                    }
+                };
+            })
+            .catch(error => {
+                console.error('Error loading LRC file:', error);
+                lrc.innerHTML = '加载歌词失败，请检查LRC文件路径和内容。';
+            });
+    </script>
+</body>
+</html>
